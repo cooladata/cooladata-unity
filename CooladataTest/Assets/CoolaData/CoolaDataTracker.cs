@@ -10,7 +10,7 @@ namespace com.cooladata.tracking.sdk.unity{
 	/// </summary>
 	public class CoolaDataTracker : MonoBehaviour {
 
-		const string TrackerVersion = "v1.0.2";
+		const string TrackerVersion = "v1.0.3";
 
 		// OperationCompleteCallback signature
 		public delegate void OperationCompleteCallback (string message);
@@ -32,14 +32,13 @@ namespace com.cooladata.tracking.sdk.unity{
 
 		/// <summary> Sets the CooladataTraker to use the specified apiToken when talking to server </summary>
 		/// <param name="apiToken">API token. Cannot be null.</param>
-		public void setup (string apiToken) { setup(apiToken, null, null, null); }
+		public void setup (string apiToken) { setup(apiToken, null, null); }
 
-		/// <summary>  Sets the CooladataTraker to use the specified apiToken when talking to server at endpointUrl. Sets userId and sessionId to be defualt values in case they are not provided in subsequent trackEvent function calls.</summary>
+		/// <summary>  Sets the CooladataTraker to use the specified apiToken when talking to server at endpointUrl. Sets userId to be defualt values in case they are not provided in subsequent trackEvent function calls.</summary>
 		/// <param name="apiToken">API token. Cannot be null.</param>
 		/// <param name="endpointUrl">Endpoint URL. Can be null.</param>
 		/// <param name="userId">User identifier. If null, must send with trackEvent.</param>
-		/// <param name="sessionId">Session identifier. Can be null.</param>
-		public void setup (string apiToken, string endpointUrl, string userId, string sessionId) {
+		public void setup (string apiToken, string endpointUrl, string userId) {
 			setupState = SetupState.Called;
 
 			// inititlaize the queue
@@ -58,7 +57,6 @@ namespace com.cooladata.tracking.sdk.unity{
 			}
 
 			if( ! string.IsNullOrEmpty(userId) ) instance.userId = userId;
-			if( ! string.IsNullOrEmpty(sessionId) ) instance.sessionId = sessionId;
 			
 			setupState = SetupState.Finished;
 			if(isSendEveryIntervalCoroutineRunning == false){
@@ -71,19 +69,19 @@ namespace com.cooladata.tracking.sdk.unity{
 		public void trackEvent( string eventName, Dictionary<string, string> eventProperties){ trackEvent(eventName, eventProperties, null, null); }
 
 		/// <summary> Tracks the event - The trackEvent method will store the reported event in a queue and will return back immediately and will throw/return error if proper conditions for sending the event are not met </summary>
-		public void trackEvent( string eventName, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){ trackEvent(eventName, null, null, eventProperties, eventId, callback); }
+		public void trackEvent( string eventName, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){ trackEvent(eventName, null, eventProperties, eventId, callback); }
 
 		/// <summary> Tracks the event - The trackEvent method will store the reported event in a queue and will return back immediately and will throw/return error if proper conditions for sending the event are not met </summary>
-		public void trackEvent( string eventName, string userID, string sessionID, Dictionary<string, string> eventProperties){ trackEvent(eventName, userID, sessionID, eventProperties, null, null); }
+		public void trackEvent( string eventName, string userID, Dictionary<string, string> eventProperties){ trackEvent(eventName, userID, eventProperties, null, null); }
 
 		/// <summary> Tracks the event - The trackEvent method will store the reported event in a queue and will return back immediately and will throw/return error if proper conditions for sending the event are not met </summary>
-		public void trackEvent( string eventName, string userID, string sessionID, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
+		public void trackEvent( string eventName, string userID, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
 			if(setupState == SetupState.NotCalled) {
 				SetupRequired();
 			} else if (setupState == SetupState.Failed) {
 				return;
 			}
-			queue.Add(eventName, userID, sessionID, eventProperties, eventId, callback);
+			queue.Add(eventName, userID, eventProperties, eventId, callback);
 		}
 
 		#region Internal
@@ -316,7 +314,6 @@ namespace com.cooladata.tracking.sdk.unity{
 		static string endpointUrl;
 		static string apiToken;
 		string userId;
-		string sessionId;
 
 		private void Send (string command, byte[] postData, Action<string,Exception> callback){ Send(command, postData, callback, true, false);}
 		private void Send (string command, byte[] postData, Action<string,Exception> callback, bool logErrors, bool sendingABatch){
@@ -392,14 +389,12 @@ namespace com.cooladata.tracking.sdk.unity{
 			public string eventName{ get { return info.ContainsKey("event_name") ? info["event_name"].Str : null; } }
 			/// <summary> The user identifier.</summary>
 			public string userId{ get { return info.ContainsKey("user_id") ? info["user_id"].ToString() : null; } }
-			/// <summary> The session identifier. </summary>
-			public string sessionId{ get { return info.ContainsKey("session_id") ? info["session_id"].Str : null; } }
 			/// <summary> The event identifier. </summary>
 			public string eventId{ get { return info.ContainsKey("event_id") ? info["event_id"].Str : null; } }
 			/// <summary> The callback for the event id's event response</summary>
 			public Action<CoolaDataDeliveryResult> callback;
 			
-			public TrackEventParamaters( string eventName, string userId, string sessionId, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
+			public TrackEventParamaters( string eventName, string userId, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
 				this.info = new JSONObject();
 
 				if( string.IsNullOrEmpty(eventName) ) throw new ArgumentException("The event name cannot be empty - it's the primary identifier of the event and must be populated correctly");
@@ -407,8 +402,6 @@ namespace com.cooladata.tracking.sdk.unity{
 
 				if( string.IsNullOrEmpty(userId) &&  string.IsNullOrEmpty(instance.userId) ) throw new ArgumentException("User ID must either be Provided at Setup or provided as a parameter to track event. Doing both is allowed, doing neither is not");
 				info.Add("user_id", string.IsNullOrEmpty(userId) ? instance.userId : userId);
-
-				if( ! string.IsNullOrEmpty(sessionId) || ! string.IsNullOrEmpty(instance.sessionId)) info.Add("session_id", string.IsNullOrEmpty(sessionId) ? instance.sessionId : sessionId );
 
 		        this.callback = callback;
 
@@ -436,7 +429,6 @@ namespace com.cooladata.tracking.sdk.unity{
 			data["event_timezone_offset"] = GetTimeZoneOffset();
 			// user_id  added by trackeEvent
 			// alternative_user_id  added by trackEvent (in paramter eventProperties)
-			data["session_id"] = instance.sessionId;
 			data["tracker_type"] = "unity";
 			data["tracker_version"] = TrackerVersion;
 			data["r"] = UnityEngine.Random.Range(0,int.MaxValue).ToString() ; // A random number added to the URL for each REST API call to prevent caching/proxying on the network.
@@ -472,13 +464,13 @@ namespace com.cooladata.tracking.sdk.unity{
 			}
 			// Device fields
 			if( SystemInfo.deviceName != null) data["device_name"] = SystemInfo.deviceName; 
-			data["device_type"] = SystemInfo.deviceType.ToString(); 
+
 			// Time fields
 			data["time_in_app"] = Math.Round( System.Convert.ToDouble(Time.time) * 1000 ).ToString();
 
 			// Device extra information
 			data["device_name"] = SystemInfo.deviceName;
-			data["device_model"] = SystemInfo.deviceModel;
+			data["session_model"] = SystemInfo.deviceModel;
 			data["device_type"] = SystemInfo.deviceType.ToString();
 			data["device_unique_identifier"] = SystemInfo.deviceUniqueIdentifier;
 
@@ -583,16 +575,15 @@ namespace com.cooladata.tracking.sdk.unity{
 				}
 			}
 			#endregion
-			/// <summary> Add the specified eventName, userId, sessionId, eventProperties, eventId and callback to the Queue </summary>
+			/// <summary> Add the specified eventName, userId, eventProperties, eventId and callback to the Queue </summary>
 			/// <param name="eventName">Event name.</param>
 			/// <param name="userID">User identifier.</param>
-			/// <param name="sessionID">Session identifier.</param>
 			/// <param name="eventProperties">Event properties.</param>
 			/// <param name="eventId">Event identifier.</param>
 			/// <param name="callback">Callback.</param>
-			public void Add( string eventName, string userId, string sessionId, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
-				if( ! AreArgumentsOkay(eventName, userId, sessionId, eventProperties, eventId, callback) ) return;
-				CoolaDataTracker.TrackEventParamaters queuedItem = new CoolaDataTracker.TrackEventParamaters(eventName, userId, sessionId, eventProperties, eventId, callback);
+			public void Add( string eventName, string userId, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
+				if( ! AreArgumentsOkay(eventName, userId, eventProperties, eventId, callback) ) return;
+				CoolaDataTracker.TrackEventParamaters queuedItem = new CoolaDataTracker.TrackEventParamaters(eventName, userId, eventProperties, eventId, callback);
 				if( string.IsNullOrEmpty(eventId) && callback == null){ 
 					items.Add(queuedItem); 
 				}else {	callbackItems.Add(queuedItem);}
@@ -605,7 +596,7 @@ namespace com.cooladata.tracking.sdk.unity{
 				CheckIfQueueTriggeredBySize();
 			}
 			/// <summary>Checks if the arguments are legal  </summary>
-			private bool AreArgumentsOkay(string eventName, string userID, string sessionID, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
+			private bool AreArgumentsOkay(string eventName, string userID, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
 				return (! string.IsNullOrEmpty(eventName)) && eventProperties != null 
 					&& ( (string.IsNullOrEmpty(eventId) && callback == null) || ( ( ! string.IsNullOrEmpty(eventId) ) && callback != null) );
 			} 

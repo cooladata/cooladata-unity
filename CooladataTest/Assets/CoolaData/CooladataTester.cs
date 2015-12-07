@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using com.cooladata.tracking.sdk.unity;
 using UnityEngine.UI;
@@ -11,7 +10,6 @@ public class CooladataTester : MonoBehaviour {
 	private InputField serverAddressInputField;
 	private InputField APIKeyInputField;
 	private InputField userIdInputField;
-	private InputField sessionIdInputField;
 	private InputField eventNameInputField;
 	private Text logsText;
 	private InputField paramNameInputField;
@@ -26,7 +24,6 @@ public class CooladataTester : MonoBehaviour {
 		APIKeyInputField = (InputField)GameObject.Find("APIKeyInputField").GetComponent<InputField>();
 		userIdInputField = (InputField)GameObject.Find("UserIdInputField").GetComponent<InputField>();
 		eventNameInputField = (InputField)GameObject.Find("EventNameInputField").GetComponent<InputField>();
-		sessionIdInputField = (InputField)GameObject.Find("SessionIdInputField").GetComponent<InputField>();
 		logsText = (Text)GameObject.Find("LogsText").GetComponent<Text>();
 		paramNameInputField = (InputField)GameObject.Find("ParamNameInputField").GetComponent<InputField>();
 		paramValueInputField = (InputField)GameObject.Find("ParamValueInputField").GetComponent<InputField>();
@@ -46,7 +43,6 @@ public class CooladataTester : MonoBehaviour {
 		serverAddressInputField.text = "https://api.cooladata.com";
 		APIKeyInputField.text = "";
 		userIdInputField.text = "Unity user";
-		sessionIdInputField.text = "Unity Session";
 		eventNameInputField.text = "Test Unity Event";
 	}
 
@@ -54,19 +50,18 @@ public class CooladataTester : MonoBehaviour {
 		string serverAddress = serverAddressInputField.text;
 		string apiKey = APIKeyInputField.text;
 		string userId = userIdInputField.text;
-		string sessionId = sessionIdInputField.text;
 
 		if (apiKey == "") {
 			operationCompleteCallback("Error: The API key can not be empty!");
 		}
 		else {
-			Debug.Log("doSetup. serverAddress: " + serverAddress + ", apiKey: " + apiKey + ", userId: " + userId + ", sessionId: " + sessionId);
+			Debug.Log("doSetup. serverAddress: " + serverAddress + ", apiKey: " + apiKey + ", userId: " + userId);
 
 			setupCanvasGroup.interactable  = false;
 			sendEventCanvasGroup.interactable = true;
 
 			// Setup cooladata
-			CoolaDataTracker.getInstance().setup(apiKey, serverAddress, userId, sessionId);
+			CoolaDataTracker.getInstance().setup(apiKey, serverAddress, userId);
 		}
 	}
 
