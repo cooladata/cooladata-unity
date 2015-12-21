@@ -56,7 +56,16 @@ namespace com.cooladata.tracking.sdk.unity{
 				isManageSendAttachedToBatchQueue = true;
 			}
 
-			if( ! string.IsNullOrEmpty(userId) ) instance.userId = userId;
+			if(string.IsNullOrEmpty(userId) )
+            {
+                // Generate a random user id
+                System.Guid uid = System.Guid.NewGuid();
+                instance.userId = uid.ToString();
+            }
+            else
+            {
+                instance.userId = userId;
+            }
 			
 			setupState = SetupState.Finished;
 			if(isSendEveryIntervalCoroutineRunning == false){
