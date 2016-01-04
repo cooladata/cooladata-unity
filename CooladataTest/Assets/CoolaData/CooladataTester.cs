@@ -5,8 +5,8 @@ using UnityEngine.UI;
 
 public class CooladataTester : MonoBehaviour {
 
-	private CanvasGroup setupCanvasGroup;
-	private CanvasGroup sendEventCanvasGroup;
+	private GameObject setupCanvasGroup;
+	private GameObject sendEventCanvasGroup;
 	private InputField serverAddressInputField;
 	private InputField APIKeyInputField;
 	private InputField userIdInputField;
@@ -14,12 +14,14 @@ public class CooladataTester : MonoBehaviour {
 	private Text logsText;
 	private InputField paramNameInputField;
 	private InputField paramValueInputField;
-	private Toggle paramSelectionToggle;
-	
-	void Start () {
+    private Toggle paramSelectionToggle;
+    private Toggle duplicateToggle;
+    private InputField duplicateInputField;
+
+    void Start () {
 		// Get reference to all relevant GUI elements
-		setupCanvasGroup = (CanvasGroup)GameObject.Find("SetupPanel").GetComponent<CanvasGroup>();
-		sendEventCanvasGroup = (CanvasGroup)GameObject.Find("EventsPanel").GetComponent<CanvasGroup>();
+		setupCanvasGroup = GameObject.Find("SetupPanel");
+        sendEventCanvasGroup = GameObject.Find("EventsPanel");
 		serverAddressInputField = (InputField)GameObject.Find("ServerAddressInputField").GetComponent<InputField>();
 		APIKeyInputField = (InputField)GameObject.Find("APIKeyInputField").GetComponent<InputField>();
 		userIdInputField = (InputField)GameObject.Find("UserIdInputField").GetComponent<InputField>();
@@ -27,13 +29,15 @@ public class CooladataTester : MonoBehaviour {
 		logsText = (Text)GameObject.Find("LogsText").GetComponent<Text>();
 		paramNameInputField = (InputField)GameObject.Find("ParamNameInputField").GetComponent<InputField>();
 		paramValueInputField = (InputField)GameObject.Find("ParamValueInputField").GetComponent<InputField>();
-		paramSelectionToggle = (Toggle)GameObject.Find("ParamSelectionToggle").GetComponent<Toggle>();
+        duplicateToggle = (Toggle)GameObject.Find("DuplicateToggle").GetComponent<Toggle>();
+        duplicateInputField = (InputField)GameObject.Find("DuplicateValueInputField").GetComponent<InputField>();
+        paramSelectionToggle = (Toggle)GameObject.Find("ParamSelectionToggle").GetComponent<Toggle>();
 
-		// Register to the operation complete (for tester logs)
-		CoolaDataTracker.getInstance().operationComplete += operationCompleteCallback;
+        // Register to the operation complete (for tester logs)
+        CoolaDataTracker.getInstance().operationComplete += operationCompleteCallback;
 
-		// The events panelshould be disabled until the user setup
-		sendEventCanvasGroup.interactable = false;
+        // The events panelshould be disabled until the user setup
+        sendEventCanvasGroup.SetActive(false);
 
 		// Parameters are disabled when starting
 		paramNameInputField.interactable = false;
@@ -57,26 +61,37 @@ public class CooladataTester : MonoBehaviour {
 		else {
 			Debug.Log("doSetup. serverAddress: " + serverAddress + ", apiKey: " + apiKey + ", userId: " + userId);
 
-			setupCanvasGroup.interactable  = false;
-			sendEventCanvasGroup.interactable = true;
+            setupCanvasGroup.SetActive(false);
+            sendEventCanvasGroup.SetActive(true);
 
-			// Setup cooladata
-			CoolaDataTracker.getInstance().setup(apiKey, serverAddress, userId);
+            // Setup cooladata
+            CoolaDataTracker.getInstance().setup(apiKey, serverAddress, userId);
 		}
 	}
 
 	public void sendEvent() {
 		Debug.Log("Sending event");
 
-		Dictionary<string,string> paramsMap = new Dictionary<string, string>();;
+        int numOfTimesToSend = 1;
 
-		if (paramSelectionToggle.isOn) {
-			// Prepare the parameters
-			paramsMap.Add(paramNameInputField.text, paramValueInputField.text);
-		}
+        if (duplicateToggle.isOn)
+        {
+            numOfTimesToSend = 1 + int.Parse(duplicateInputField.text);
+        }
 
-		// Add the event to the queue
-		CoolaDataTracker.getInstance().trackEvent(eventNameInputField.text, paramsMap);
+        for (int eventIndex = 0; eventIndex < numOfTimesToSend; eventIndex++)
+        {
+            Dictionary<string, string> paramsMap = new Dictionary<string, string>();
+
+            if (paramSelectionToggle.isOn)
+            {
+                // Prepare the parameters
+                paramsMap.Add(paramNameInputField.text, paramValueInputField.text);
+            }
+
+            // Add the event to the queue
+            CoolaDataTracker.getInstance().trackEvent(eventNameInputField.text, paramsMap);
+        }
 	}
 
 	public void operationCompleteCallback(string name) {
@@ -87,7 +102,7 @@ public class CooladataTester : MonoBehaviour {
 		logsText.text = "";
 	}
 
-	public void onParamsToggleChange(bool isSelected) {
+    public void onParamsToggleChange(bool isSelected) {
 		paramNameInputField.interactable = isSelected;
 		paramValueInputField.interactable = isSelected;
 	}

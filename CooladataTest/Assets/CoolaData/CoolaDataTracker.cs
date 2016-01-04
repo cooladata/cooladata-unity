@@ -10,7 +10,7 @@ namespace com.cooladata.tracking.sdk.unity{
 	/// </summary>
 	public class CoolaDataTracker : MonoBehaviour {
 
-		const string TrackerVersion = "v1.0.3";
+		const string TrackerVersion = "v1.0.4";
 
 		// OperationCompleteCallback signature
 		public delegate void OperationCompleteCallback (string message);
@@ -72,6 +72,8 @@ namespace com.cooladata.tracking.sdk.unity{
 				isSendEveryIntervalCoroutineRunning = true;
 				StartCoroutine(TrySendBatchEveryInterval());
 			}
+
+            StartCoroutine(GetCalibrationTimeFromServer(apiToken, endpointUrl));
 		} 
 
 		/// <summary> Tracks the event - The trackEvent method will store the reported event in a queue and will return back immediately and will throw/return error if proper conditions for sending the event are not met </summary>
@@ -136,8 +138,10 @@ namespace com.cooladata.tracking.sdk.unity{
 		float batchSendStartTime;
 		/// <summary> Is send every interval coroutine running. </summary>
 		bool isSendEveryIntervalCoroutineRunning = false;
+        /// <summary> Calibration time got from the server. if value is 0 it means we did not succeeed to get that number. </summary>
+		static double calibrationTimeMS = 0;
 
-		void OnEnable(){
+        void OnEnable(){
 			// reactivate batch sending when we are enabled if needed
 			if(setupState == SetupState.Finished){
 				if(isManageSendAttachedToBatchQueue == true)	queue.TriggersBatchSending += ManageBatchSending;
@@ -166,9 +170,57 @@ namespace com.cooladata.tracking.sdk.unity{
 			isSendEveryIntervalCoroutineRunning = false;
 			yield break;
 		}
-		
-		/// <summary> Manages the batch sending: tryes to add a new batch from queue to batchQueue, and then send it </summary>
-		void ManageBatchSending() {
+
+        /// <summary> Get the calibration time from the server. </summary>
+		IEnumerator GetCalibrationTimeFromServer(string apiToken, string endpointUrl)
+        {
+            // Add slash in the end if needed
+            if (endpointUrl[endpointUrl.Length - 1] != '/') endpointUrl += '/';
+
+            string finalAddress = endpointUrl + "egw/2/" + apiToken + "/config";
+
+            WWW w = new WWW(finalAddress);
+
+            // Wait for response
+            while (!w.isDone)
+            {
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            // Check timeout
+            if (!w.isDone)
+            {
+                Debug.Log("GetCalibrationTimeFromServer 408 (timeout).");
+
+                w.Dispose();
+                yield break;
+            }
+   
+            if (!String.IsNullOrEmpty(w.error))
+            {
+                Exception e = new Exception(w.error);
+                Debug.Log("Error in the connection for " + finalAddress + ": " + w.error);
+                yield break;
+            }
+            else
+            {
+                JSONObject responseDictionary = JSONObject.Parse(w.text);
+
+                // Get the configuration
+                JSONObject configurationJSON = responseDictionary.GetObject("configuration");
+
+                // Get the calibration time
+                calibrationTimeMS = configurationJSON.GetNumber("calibrationTimestampMillis");
+
+                if (CoolaDataTracker.getInstance().operationComplete != null)
+                {
+                    CoolaDataTracker.getInstance().operationComplete("Calibration time: " + calibrationTimeMS);
+                }
+            }
+        }            
+
+        /// <summary> Manages the batch sending: tryes to add a new batch from queue to batchQueue, and then send it </summary>
+        void ManageBatchSending() {
 			// check if error with api token
 			if(setupState == SetupState.NotCalled){
 				SetupRequired();
@@ -433,9 +485,20 @@ namespace com.cooladata.tracking.sdk.unity{
 		/// <returns>The fields.</returns>
 		static Dictionary<string,string> MandatoryFields(){
 			Dictionary<string,string> data = new Dictionary<string, string>();
-			// Mandatory Fields
-			data["event_timestamp_epoch"] = System.Convert.ToInt64(System.DateTime.UtcNow.Subtract(new System.DateTime(1970, 1, 1)).TotalMilliseconds).ToString();	// Time in milliseconds from Jan 1st 1970
-			data["event_timezone_offset"] = GetTimeZoneOffset();
+            // Mandatory Fields
+
+            if (calibrationTimeMS == 0)
+            {
+                // We got not calibration time from the server, use the local machine time
+                data["event_timestamp_epoch"] = System.Convert.ToInt64(System.DateTime.UtcNow.Subtract(new System.DateTime(1970, 1, 1)).TotalMilliseconds).ToString();  // Time in milliseconds from Jan 1st 1970
+            }
+            else
+            {
+                double timeInAppMS = Math.Round(System.Convert.ToDouble(Time.time) * 1000);
+                data["event_timestamp_epoch"] = (calibrationTimeMS + timeInAppMS).ToString();
+            }
+
+            data["event_timezone_offset"] = GetTimeZoneOffset();
 			// user_id  added by trackeEvent
 			// alternative_user_id  added by trackEvent (in paramter eventProperties)
 			data["tracker_type"] = "unity";
@@ -451,7 +514,7 @@ namespace com.cooladata.tracking.sdk.unity{
 			string event_timezone_offset =
 				( System.TimeZone.CurrentTimeZone.GetUtcOffset(System.DateTime.Now).Hours // calculate the offset right now
 				 - ( (System.TimeZone.CurrentTimeZone.IsDaylightSavingTime(System.DateTime.Now)) ? 1 : 0 ) ).ToString(); // dedcut daylight savings if needed
-			return event_timezone_offset + ".0";
+			return event_timezone_offset;
 		}
 		
 		#endregion
