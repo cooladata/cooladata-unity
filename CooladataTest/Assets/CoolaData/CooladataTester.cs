@@ -81,7 +81,7 @@ public class CooladataTester : MonoBehaviour {
 
         for (int eventIndex = 0; eventIndex < numOfTimesToSend; eventIndex++)
         {
-            Dictionary<string, string> paramsMap = new Dictionary<string, string>();
+            Dictionary<string, Boomlagoon.JSON.JSONValue> paramsMap = new Dictionary<string, Boomlagoon.JSON.JSONValue>();
 
             if (paramSelectionToggle.isOn)
             {

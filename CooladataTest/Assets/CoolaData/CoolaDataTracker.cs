@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System;
@@ -77,16 +77,16 @@ namespace com.cooladata.tracking.sdk.unity{
 		} 
 
 		/// <summary> Tracks the event - The trackEvent method will store the reported event in a queue and will return back immediately and will throw/return error if proper conditions for sending the event are not met </summary>
-		public void trackEvent( string eventName, Dictionary<string, string> eventProperties){ trackEvent(eventName, eventProperties, null, null); }
+		public void trackEvent( string eventName, Dictionary<string, JSONValue> eventProperties){ trackEvent(eventName, eventProperties, null, null); }
 
 		/// <summary> Tracks the event - The trackEvent method will store the reported event in a queue and will return back immediately and will throw/return error if proper conditions for sending the event are not met </summary>
-		public void trackEvent( string eventName, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){ trackEvent(eventName, null, eventProperties, eventId, callback); }
+		public void trackEvent( string eventName, Dictionary<string, JSONValue> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){ trackEvent(eventName, null, eventProperties, eventId, callback); }
 
 		/// <summary> Tracks the event - The trackEvent method will store the reported event in a queue and will return back immediately and will throw/return error if proper conditions for sending the event are not met </summary>
-		public void trackEvent( string eventName, string userID, Dictionary<string, string> eventProperties){ trackEvent(eventName, userID, eventProperties, null, null); }
+		public void trackEvent( string eventName, string userID, Dictionary<string, JSONValue> eventProperties){ trackEvent(eventName, userID, eventProperties, null, null); }
 
 		/// <summary> Tracks the event - The trackEvent method will store the reported event in a queue and will return back immediately and will throw/return error if proper conditions for sending the event are not met </summary>
-		public void trackEvent( string eventName, string userID, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
+		public void trackEvent( string eventName, string userID, Dictionary<string, JSONValue> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
 			if(setupState == SetupState.NotCalled) {
 				SetupRequired();
 			} else if (setupState == SetupState.Failed) {
@@ -455,7 +455,7 @@ namespace com.cooladata.tracking.sdk.unity{
 			/// <summary> The callback for the event id's event response</summary>
 			public Action<CoolaDataDeliveryResult> callback;
 			
-			public TrackEventParamaters( string eventName, string userId, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
+			public TrackEventParamaters( string eventName, string userId, Dictionary<string, JSONValue> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
 				this.info = new JSONObject();
 
 				if( string.IsNullOrEmpty(eventName) ) throw new ArgumentException("The event name cannot be empty - it's the primary identifier of the event and must be populated correctly");
@@ -468,7 +468,7 @@ namespace com.cooladata.tracking.sdk.unity{
 
 				if( ! string.IsNullOrEmpty(eventId) )	info.Add("event_id", eventId);
 				// add provided paramators, missing mandatory fields, additional optional fields
-				foreach(var pair in eventProperties) {  if( ! info.ContainsKey(pair.Key) ) 	info.Add(pair.Key, pair.Value); }
+				foreach(KeyValuePair<string, JSONValue> pair in eventProperties) {  if( ! info.ContainsKey(pair.Key) ) info.Add(pair.Key, pair.Value); }
 				foreach(var pair in MandatoryFields()) { if( ! info.ContainsKey(pair.Key) ) 	info.Add(pair.Key, pair.Value); }
 				foreach(var pair in OptionalFields()) { if( ! info.ContainsKey(pair.Key) ) 	info.Add(pair.Key, pair.Value); }
 			}
@@ -483,19 +483,19 @@ namespace com.cooladata.tracking.sdk.unity{
 		#region Mandatory Fields
 		/// <summary> returns a dictionary of the fields that must be included when sending to server</summary>
 		/// <returns>The fields.</returns>
-		static Dictionary<string,string> MandatoryFields(){
-			Dictionary<string,string> data = new Dictionary<string, string>();
+		static Dictionary<string,JSONValue> MandatoryFields(){
+			Dictionary<string, JSONValue> data = new Dictionary<string, JSONValue>();
             // Mandatory Fields
 
             if (calibrationTimeMS == 0)
             {
                 // We got not calibration time from the server, use the local machine time
-                data["event_timestamp_epoch"] = System.Convert.ToInt64(System.DateTime.UtcNow.Subtract(new System.DateTime(1970, 1, 1)).TotalMilliseconds).ToString();  // Time in milliseconds from Jan 1st 1970
+                data["event_timestamp_epoch"] = System.Convert.ToInt64(System.DateTime.UtcNow.Subtract(new System.DateTime(1970, 1, 1)).TotalMilliseconds);  // Time in milliseconds from Jan 1st 1970
             }
             else
             {
                 double timeInAppMS = Math.Round(System.Convert.ToDouble(Time.time) * 1000);
-                data["event_timestamp_epoch"] = (calibrationTimeMS + timeInAppMS).ToString();
+                data["event_timestamp_epoch"] = (calibrationTimeMS + timeInAppMS);
             }
 
             data["event_timezone_offset"] = GetTimeZoneOffset();
@@ -510,18 +510,18 @@ namespace com.cooladata.tracking.sdk.unity{
 		
 		/// <summary> The local timezone in float format, e.g: -3.0 means GMT-3:00 </summary>
 		/// <returns>The time zone offset.</returns>
-		static string GetTimeZoneOffset(){
-			string event_timezone_offset =
-				( System.TimeZone.CurrentTimeZone.GetUtcOffset(System.DateTime.Now).Hours // calculate the offset right now
-				 - ( (System.TimeZone.CurrentTimeZone.IsDaylightSavingTime(System.DateTime.Now)) ? 1 : 0 ) ).ToString(); // dedcut daylight savings if needed
+		static int GetTimeZoneOffset(){
+            int event_timezone_offset =
+                (System.TimeZone.CurrentTimeZone.GetUtcOffset(System.DateTime.Now).Hours // calculate the offset right now
+                 - ((System.TimeZone.CurrentTimeZone.IsDaylightSavingTime(System.DateTime.Now)) ? 1 : 0)); // dedcut daylight savings if needed
 			return event_timezone_offset;
 		}
 		
 		#endregion
 		#region Optional Fields
 		/// <summary> returns a dictionary of the fields that can be included when sending to server</summary>
-		static Dictionary<string,string> OptionalFields(){
-			Dictionary<string,string> data = new Dictionary<string, string>();
+		static Dictionary<string,JSONValue> OptionalFields(){
+			Dictionary<string, JSONValue> data = new Dictionary<string, JSONValue>();
 			// screen fields
 			data["session_screen_size"] = Screen.currentResolution.width + "x" + Screen.currentResolution.height;
 			int hfc = FindHCF(Screen.currentResolution.width, Screen.currentResolution.height);
@@ -535,10 +535,10 @@ namespace com.cooladata.tracking.sdk.unity{
 				data["session_os"] = SystemInfo.operatingSystem.Substring(0, indexOfFisrtSpace); 
 			}
 			// Device fields
-			if( SystemInfo.deviceName != null) data["device_name"] = SystemInfo.deviceName; 
+			if( SystemInfo.deviceName != null) data["device_name"] = SystemInfo.deviceName;
 
-			// Time fields
-			data["time_in_app"] = Math.Round( System.Convert.ToDouble(Time.time) * 1000 ).ToString();
+            // Time fields
+            data["time_in_app"] = Math.Round(System.Convert.ToDouble(Time.time) * 1000);
 
 			// Device extra information
 			data["device_name"] = SystemInfo.deviceName;
@@ -653,7 +653,7 @@ namespace com.cooladata.tracking.sdk.unity{
 			/// <param name="eventProperties">Event properties.</param>
 			/// <param name="eventId">Event identifier.</param>
 			/// <param name="callback">Callback.</param>
-			public void Add( string eventName, string userId, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
+			public void Add( string eventName, string userId, Dictionary<string, JSONValue> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
 				if( ! AreArgumentsOkay(eventName, userId, eventProperties, eventId, callback) ) return;
 				CoolaDataTracker.TrackEventParamaters queuedItem = new CoolaDataTracker.TrackEventParamaters(eventName, userId, eventProperties, eventId, callback);
 				if( string.IsNullOrEmpty(eventId) && callback == null){ 
@@ -668,7 +668,7 @@ namespace com.cooladata.tracking.sdk.unity{
 				CheckIfQueueTriggeredBySize();
 			}
 			/// <summary>Checks if the arguments are legal  </summary>
-			private bool AreArgumentsOkay(string eventName, string userID, Dictionary<string, string> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
+			private bool AreArgumentsOkay(string eventName, string userID, Dictionary<string, JSONValue> eventProperties, string eventId, Action<CoolaDataDeliveryResult> callback){
 				return (! string.IsNullOrEmpty(eventName)) && eventProperties != null 
 					&& ( (string.IsNullOrEmpty(eventId) && callback == null) || ( ( ! string.IsNullOrEmpty(eventId) ) && callback != null) );
 			} 
