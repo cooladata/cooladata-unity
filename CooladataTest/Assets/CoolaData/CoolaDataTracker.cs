@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using Boomlagoon.JSON;
+using com.cooladata.tracking.sdk.utils;
 
 namespace com.cooladata.tracking.sdk.unity{
 	/// <summary>
@@ -10,7 +11,7 @@ namespace com.cooladata.tracking.sdk.unity{
 	/// </summary>
 	public class CoolaDataTracker : MonoBehaviour {
 
-		const string TrackerVersion = "v1.0.4";
+		const string TrackerVersion = "v1.0.5";
 
 		// OperationCompleteCallback signature
 		public delegate void OperationCompleteCallback (string message);
@@ -58,12 +59,27 @@ namespace com.cooladata.tracking.sdk.unity{
 
 			if(string.IsNullOrEmpty(userId) )
             {
-                // Generate a random user id
-                System.Guid uid = System.Guid.NewGuid();
-                instance.userId = uid.ToString();
+                // Try to load the user if from the player prefs
+                string savedUserId = CooladataLocalStorage.LoadUserId();
+
+                if (string.IsNullOrEmpty(savedUserId))
+                {
+                    // Generate a random user id
+                    System.Guid uid = System.Guid.NewGuid();
+                    instance.userId = uid.ToString();
+
+                    // Save the user id
+                    CooladataLocalStorage.SaveUserId(instance.userId);
+                }
+                else
+                {
+                    // We use the saved user id
+                    instance.userId = savedUserId;
+                }                
             }
             else
             {
+                // We use the user id defined by the user
                 instance.userId = userId;
             }
 			
@@ -199,7 +215,7 @@ namespace com.cooladata.tracking.sdk.unity{
             if (!String.IsNullOrEmpty(w.error))
             {
                 Exception e = new Exception(w.error);
-                Debug.Log("Error in the connection for " + finalAddress + ": " + w.error);
+                Debug.Log("Error in the connection for " + finalAddress + ": " + e);
                 yield break;
             }
             else
