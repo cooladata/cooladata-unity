@@ -1,11 +1,9 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 namespace com.cooladata.tracking.sdk.utils
 {
     public class CooladataLocalStorage : MonoBehaviour
     {
-
         public static void SaveUserId(string userId)
         {
             try

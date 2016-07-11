@@ -66,7 +66,9 @@ public class CooladataTester : MonoBehaviour {
 
             // Setup cooladata
             CoolaDataTracker.getInstance().setup(apiKey, serverAddress, userId);
-		}
+
+            AddToLog("UTM data abailable: " + CoolaDataTracker.coolaDataUTM.DataAvailable);
+        }
 	}
 
 	public void sendEvent() {
@@ -94,13 +96,18 @@ public class CooladataTester : MonoBehaviour {
         }
 	}
 
-	public void operationCompleteCallback(string name) {
-		logsText.text = (System.DateTime.Now.ToString() + ": " + name + "\n" + logsText.text);
+    private void operationCompleteCallback(string name) {
+        AddToLog(name);
 	}
 
-	public void clearLogs() {
+    private void clearLogs() {
 		logsText.text = "";
 	}
+
+    private void AddToLog(string txtToAdd)
+    {
+        logsText.text = (System.DateTime.Now.ToString() + ": " + txtToAdd + "\n" + logsText.text);
+    }
 
     public void onParamsToggleChange(bool isSelected) {
 		paramNameInputField.interactable = isSelected;

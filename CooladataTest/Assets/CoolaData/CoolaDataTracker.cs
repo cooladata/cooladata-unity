@@ -11,10 +11,12 @@ namespace com.cooladata.tracking.sdk.unity{
 	/// </summary>
 	public class CoolaDataTracker : MonoBehaviour {
 
-		const string TrackerVersion = "v1.0.5";
+		const string TrackerVersion = "v1.0.6";
 
-		// OperationCompleteCallback signature
-		public delegate void OperationCompleteCallback (string message);
+        public static CoolaDataUTM coolaDataUTM;
+
+        // OperationCompleteCallback signature
+        public delegate void OperationCompleteCallback (string message);
 		
 		// OperationCompleteCallback Event declaration
 		public event OperationCompleteCallback operationComplete;
@@ -82,8 +84,11 @@ namespace com.cooladata.tracking.sdk.unity{
                 // We use the user id defined by the user
                 instance.userId = userId;
             }
-			
-			setupState = SetupState.Finished;
+
+            // Initialize the UTM data
+            coolaDataUTM = new CoolaDataUTM();
+
+            setupState = SetupState.Finished;
 			if(isSendEveryIntervalCoroutineRunning == false){
 				isSendEveryIntervalCoroutineRunning = true;
 				StartCoroutine(TrySendBatchEveryInterval());
@@ -175,9 +180,9 @@ namespace com.cooladata.tracking.sdk.unity{
 		/// <summary> Tries to send a batch every interval. </summary>
 		IEnumerator TrySendBatchEveryInterval(){
 			// while we are active
-			Debug.Log ("Trying1");
+			//Debug.Log ("Trying1");
 			while(enabled && setupState == SetupState.Finished){
-				Debug.Log ("Trying2");
+				//Debug.Log ("Trying2");
 				// wait for events publich intervall then try to send a batch
 				float publishInterval = float.Parse(defaults["eventsPublishIntervalMillis"])/1000f;
 				yield return new WaitForSeconds(publishInterval);
@@ -456,11 +461,10 @@ namespace com.cooladata.tracking.sdk.unity{
 				{"tracker_type", "unity"},
 				
 			};
-		#endregion
+        #endregion
 
-		#region Internal Track Event Paramaters Struct
-		///<summary> Should hold all paramaters that cooladataTracker needs to track an Event</summary>
-		private struct TrackEventParamaters{
+        ///<summary> Should hold all paramaters that cooladataTracker needs to track an Event</summary>
+        private struct TrackEventParamaters{
 			private JSONObject info;
 			/// <summary> The name of the event. </summary>
 			public string eventName{ get { return info.ContainsKey("event_name") ? info["event_name"].Str : null; } }
@@ -483,17 +487,17 @@ namespace com.cooladata.tracking.sdk.unity{
 		        this.callback = callback;
 
 				if( ! string.IsNullOrEmpty(eventId) )	info.Add("event_id", eventId);
-				// add provided paramators, missing mandatory fields, additional optional fields
+				// add provided paramators, missing mandatory fields, additional optional fields and UTM data
 				foreach(KeyValuePair<string, JSONValue> pair in eventProperties) {  if( ! info.ContainsKey(pair.Key) ) info.Add(pair.Key, pair.Value); }
 				foreach(var pair in MandatoryFields()) { if( ! info.ContainsKey(pair.Key) ) 	info.Add(pair.Key, pair.Value); }
 				foreach(var pair in OptionalFields()) { if( ! info.ContainsKey(pair.Key) ) 	info.Add(pair.Key, pair.Value); }
+                foreach (var pair in coolaDataUTM.UTMData) { if (!info.ContainsKey(pair.Key)) info.Add(pair.Key, pair.Value); }
 			}
 
 			public override string ToString (){
 				return info.ToString();
 			}
 		}
-		#endregion
 
 		#region Internal Collection Parameters
 		#region Mandatory Fields
@@ -532,11 +536,12 @@ namespace com.cooladata.tracking.sdk.unity{
                  - ((System.TimeZone.CurrentTimeZone.IsDaylightSavingTime(System.DateTime.Now)) ? 1 : 0)); // dedcut daylight savings if needed
 			return event_timezone_offset;
 		}
-		
-		#endregion
-		#region Optional Fields
-		/// <summary> returns a dictionary of the fields that can be included when sending to server</summary>
-		static Dictionary<string,JSONValue> OptionalFields(){
+
+        #endregion
+
+        #region Optional Fields
+        /// <summary> returns a dictionary of the fields that can be included when sending to server</summary>
+        static Dictionary<string,JSONValue> OptionalFields(){
 			Dictionary<string, JSONValue> data = new Dictionary<string, JSONValue>();
 			// screen fields
 			data["session_screen_size"] = Screen.currentResolution.width + "x" + Screen.currentResolution.height;
