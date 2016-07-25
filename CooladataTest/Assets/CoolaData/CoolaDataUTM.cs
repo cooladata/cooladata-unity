@@ -60,7 +60,6 @@ public class CoolaDataUTM {
 
         if (mDataAvailable) 
         {
-            mUTMData[INSTALL_REFERRER_KEY] = CooladataAndroidPluginScript.GetRefferer(INSTALL_REFERRER_KEY);
             mUTMData[UTM_CAMPAIGN_KEY] = CooladataAndroidPluginScript.GetRefferer(UTM_CAMPAIGN_KEY);
             mUTMData[UTM_CONTENT_KEY] = CooladataAndroidPluginScript.GetRefferer(UTM_CONTENT_KEY);
             mUTMData[UTM_MEDIUM_KEY] = CooladataAndroidPluginScript.GetRefferer(UTM_MEDIUM_KEY);
