@@ -11,7 +11,7 @@ namespace com.cooladata.tracking.sdk.unity{
 	/// </summary>
 	public class CoolaDataTracker : MonoBehaviour {
 
-		const string TrackerVersion = "v1.0.6";
+		const string TrackerVersion = "v1.0.7";
 
         public static CoolaDataUTM coolaDataUTM;
 
@@ -94,7 +94,7 @@ namespace com.cooladata.tracking.sdk.unity{
 				StartCoroutine(TrySendBatchEveryInterval());
 			}
 
-            StartCoroutine(GetCalibrationTimeFromServer(apiToken, endpointUrl));
+            StartCoroutine(GetCalibrationTimeFromServer(apiToken));
 		} 
 
 		/// <summary> Tracks the event - The trackEvent method will store the reported event in a queue and will return back immediately and will throw/return error if proper conditions for sending the event are not met </summary>
@@ -193,12 +193,12 @@ namespace com.cooladata.tracking.sdk.unity{
 		}
 
         /// <summary> Get the calibration time from the server. </summary>
-		IEnumerator GetCalibrationTimeFromServer(string apiToken, string endpointUrl)
+		IEnumerator GetCalibrationTimeFromServer(string apiToken)
         {
             // Add slash in the end if needed
-            if (endpointUrl[endpointUrl.Length - 1] != '/') endpointUrl += '/';
+            if (CoolaDataTracker.endpointUrl[CoolaDataTracker.endpointUrl.Length - 1] != '/') CoolaDataTracker.endpointUrl += '/';
 
-            string finalAddress = endpointUrl + "egw/2/" + apiToken + "/config";
+            string finalAddress = CoolaDataTracker.endpointUrl + "egw/2/" + apiToken + "/config";
 
             WWW w = new WWW(finalAddress);
 
@@ -321,7 +321,7 @@ namespace com.cooladata.tracking.sdk.unity{
 				// on all other error codes we reattempt to send unless limit reached
 				else { 
 
-					Debug.Log("BatchSendCallbackDelegate failed.");
+					Debug.Log("BatchSendCallbackDelegate failed. " + e.Message);
 
 					// check if we have reached the retry limit
 					if(attemptsMadeSoFar >= int.Parse(defaults["maxTotalRequestRetries"])){
