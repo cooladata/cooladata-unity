@@ -11,7 +11,7 @@ namespace com.cooladata.tracking.sdk.unity{
 	/// </summary>
 	public class CoolaDataTracker : MonoBehaviour {
 
-		const string TrackerVersion = "v1.0.7";
+		const string TrackerVersion = "v1.0.8";
 
         public static CoolaDataUTM coolaDataUTM;
 
@@ -567,8 +567,12 @@ namespace com.cooladata.tracking.sdk.unity{
 			data["device_type"] = SystemInfo.deviceType.ToString();
 			data["device_unique_identifier"] = SystemInfo.deviceUniqueIdentifier;
 
+#if UNITY_IOS
+            // Add the session_dua only on iOS to make it easier on server side recognition 
+            data["session_dua"] = SystemInfo.deviceModel;
+#endif
 
-			return data;
+            return data;
 		}
 
 		/// <summary>
