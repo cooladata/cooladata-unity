@@ -1,9 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2015
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CooladataTest.CSharp.Plugins", "CooladataTest.CSharp.Plugins.csproj", "{0201C478-1B09-68B0-C2AC-71AEC76EE5DE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CooladataTest.CSharp", "CooladataTest.CSharp.csproj", "{94655927-6D45-D74A-D963-C83414B9863E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CooladataTest", "CooladataTest.csproj", "{776AFA06-BDDC-5130-AD23-C2285D2E4F56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,14 +9,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0201C478-1B09-68B0-C2AC-71AEC76EE5DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0201C478-1B09-68B0-C2AC-71AEC76EE5DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0201C478-1B09-68B0-C2AC-71AEC76EE5DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0201C478-1B09-68B0-C2AC-71AEC76EE5DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{94655927-6D45-D74A-D963-C83414B9863E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{94655927-6D45-D74A-D963-C83414B9863E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{94655927-6D45-D74A-D963-C83414B9863E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{94655927-6D45-D74A-D963-C83414B9863E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{776AFA06-BDDC-5130-AD23-C2285D2E4F56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{776AFA06-BDDC-5130-AD23-C2285D2E4F56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{776AFA06-BDDC-5130-AD23-C2285D2E4F56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{776AFA06-BDDC-5130-AD23-C2285D2E4F56}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

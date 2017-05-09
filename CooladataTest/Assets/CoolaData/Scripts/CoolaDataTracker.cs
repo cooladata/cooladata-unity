@@ -11,7 +11,7 @@ namespace com.cooladata.tracking.sdk.unity{
 	/// </summary>
 	public class CoolaDataTracker : MonoBehaviour {
 
-		const string TrackerVersion = "v1.0.8";
+		const string TrackerVersion = "v1.0.9";
 
         public static CoolaDataUTM coolaDataUTM;
 
@@ -230,12 +230,22 @@ namespace com.cooladata.tracking.sdk.unity{
                 // Get the configuration
                 JSONObject configurationJSON = responseDictionary.GetObject("configuration");
 
-                // Get the calibration time
-                calibrationTimeMS = configurationJSON.GetNumber("calibrationTimestampMillis");
-
-                if (CoolaDataTracker.getInstance().operationComplete != null)
+                if (configurationJSON != null)
                 {
-                    CoolaDataTracker.getInstance().operationComplete("Calibration time: " + calibrationTimeMS);
+                    // Get the calibration time
+                    calibrationTimeMS = configurationJSON.GetNumber("calibrationTimestampMillis");
+
+                    if (CoolaDataTracker.getInstance().operationComplete != null)
+                    {
+                        CoolaDataTracker.getInstance().operationComplete("Calibration time: " + calibrationTimeMS);
+                    }
+                }
+                else
+                {
+                    if (CoolaDataTracker.getInstance().operationComplete != null)
+                    {
+                        CoolaDataTracker.getInstance().operationComplete("Can not find 'calibrationTimestampMillis' parameter");
+                    }
                 }
             }
         }            
@@ -479,6 +489,10 @@ namespace com.cooladata.tracking.sdk.unity{
 				this.info = new JSONObject();
 
 				if( string.IsNullOrEmpty(eventName) ) throw new ArgumentException("The event name cannot be empty - it's the primary identifier of the event and must be populated correctly");
+
+                // Take care of " escape character
+                eventName = eventName.Replace("\"", "\\\"");
+
 				info.Add("event_name", eventName);
 
 				if( string.IsNullOrEmpty(userId) &&  string.IsNullOrEmpty(instance.userId) ) throw new ArgumentException("User ID must either be Provided at Setup or provided as a parameter to track event. Doing both is allowed, doing neither is not");
